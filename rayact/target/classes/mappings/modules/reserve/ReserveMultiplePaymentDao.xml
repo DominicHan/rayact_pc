@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bra.modules.reserve.dao.ReserveMultiplePaymentDao">
+    
+	<sql id="reserveMultiplePaymentColumns">
+		a.id AS "id",
+		a.order_id AS "orderId",
+		a.fk_reserve_field_id AS "field.id",
+		a.pay_type AS "payType",
+		a.payment_amount AS "paymentAmount",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		a.tenant_id AS "tenantId"
+	</sql>
+	
+	<sql id="reserveMultiplePaymentJoins">
+	</sql>
+    
+	<select id="get" resultType="ReserveMultiplePayment">
+		SELECT 
+			<include refid="reserveMultiplePaymentColumns"/>
+		FROM reserve_multiple_payment a
+		<include refid="reserveMultiplePaymentJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="ReserveMultiplePayment">
+		SELECT 
+			<include refid="reserveMultiplePaymentColumns"/>
+		FROM reserve_multiple_payment a
+		<include refid="reserveMultiplePaymentJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}  and a.tenant_id = #{tenantId}
+			<if test="orderId !=null and orderId !=''">
+				and a.order_id=#{orderId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="reserveFieldMultiplePaymentReport"
+			resultType="com.bra.modules.reserve.entity.form.ReserveVenueProjectFieldIntervalReport">
+		SELECT
+		b.id AS "reserveField.id",
+		b.name AS "reserveField.name",
+		sum(payment_amount) AS "bill",
+		sum(if(pay_type=1,payment_amount,0)) AS "storedCardBill",
+		sum(if(pay_type=2,payment_amount,0)) AS "cashBill",
+		sum(if(pay_type=3,payment_amount,0)) AS "bankCardBill",
+		sum(if(pay_type=4,payment_amount,0)) AS "weiXinBill",
+		sum(if(pay_type=9,payment_amount,0)) AS "personalWeiXinBill",
+		sum(if(pay_type=5,payment_amount,0)) AS "aliPayBill",
+		sum(if(pay_type=10,payment_amount,0)) AS "personalAliPayBill",
+		sum(if(pay_type=6,payment_amount,0)) AS "otherBill",
+		sum(if(pay_type=7,payment_amount,0)) AS "dueBill"
+		from reserve_multiple_payment as a
+		LEFT JOIN reserve_field as b ON b.id=a.fk_reserve_field_id
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL} and
+			a.tenant_id = #{tenantId}
+			<if test="startDate !=null and endDate !=null">
+				and (Date(a.create_date) BETWEEN DATE (#{startDate}) AND DATE(#{endDate}))
+			</if>
+			<if test="reserveField !=null and reserveField.id !=null">
+				and a.fk_reserve_field_id=#{reserveField.id}
+			</if>
+		</where>
+		GROUP BY b.id
+	</select>
+	
+	<select id="findAllList" resultType="ReserveMultiplePayment">
+		SELECT 
+			<include refid="reserveMultiplePaymentColumns"/>
+		FROM reserve_multiple_payment a
+		<include refid="reserveMultiplePaymentJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO reserve_multiple_payment(
+			id,
+			order_id,
+			fk_reserve_field_id,
+			pay_type,
+			payment_amount,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag,
+			tenant_id
+		) VALUES (
+			#{id},
+			#{orderId},
+			#{field.id},
+			#{payType},
+			#{paymentAmount},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag},
+			#{tenantId}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE reserve_multiple_payment SET 	
+			order_id = #{orderId},
+		  	fk_reserve_field_id = #{field.id},
+			pay_type = #{payType},
+			payment_amount = #{paymentAmount},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks},
+			tenant_id = #{tenantId}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE reserve_multiple_payment SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

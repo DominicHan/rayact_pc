@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bra.modules.cms.dao.PostMainDao">
+    
+	<sql id="postMainColumns">
+		a.id AS "id",
+		a.subject AS "subject",
+		a.content AS "content",
+		a.fk_group_id AS "group.id",
+		c.name AS "group.name",
+		a.post_num AS "postNum",
+		a.order_num AS "orderNum",
+		a.del_flag AS "delFlag",
+		a.create_by AS "createBy.id",
+		u.name AS "createBy.name",
+		u.photo AS "createBy.photo",
+		a.create_date AS "createDate",
+		a.update_date AS "updateDate",
+		a.update_by AS "updateBy.id",
+		a.remarks AS "remarks"
+	</sql>
+	
+	<sql id="postMainJoins">
+		LEFT JOIN sys_user u ON u.id = a.create_by
+		LEFT JOIN cms_category c ON c.id = a.fk_group_id
+	</sql>
+    
+	<select id="get" resultType="PostMain">
+		SELECT 
+			<include refid="postMainColumns"/>
+		FROM post_main a
+		<include refid="postMainJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="PostMain">
+		SELECT 
+			<include refid="postMainColumns"/>
+		FROM post_main a
+		<include refid="postMainJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="subject != null and subject != ''">
+				AND a.subject LIKE
+				<if test="dbName == 'oracle'">'%'||#{subject}||'%'</if>
+				<if test="dbName == 'mssql'">'%'+#{subject}+'%'</if>
+				<if test="dbName == 'mysql'">concat('%',#{subject},'%')</if>
+			</if>
+			<if test="group!=null and group.id != null and group.id != ''">
+				AND a.fk_group_id = #{group.id}
+			</if>
+			<if test="createBy!=null and createBy.id != null and createBy.id != ''">
+				AND a.create_by = #{createBy.id}
+			</if>
+			${sqlMap.dsf}
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="PostMain">
+		SELECT 
+			<include refid="postMainColumns"/>
+		FROM post_main a
+		<include refid="postMainJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO post_main(
+			id,
+			subject,
+			content,
+			fk_group_id,
+			post_num,
+			order_num,
+			del_flag,
+			create_by,
+			create_date,
+			update_date,
+			update_by,
+			remarks
+		) VALUES (
+			#{id},
+			#{subject},
+			#{content},
+			#{group.id},
+			#{postNum},
+			#{orderNum},
+			#{delFlag},
+			#{createBy.id},
+			#{createDate},
+			#{updateDate},
+			#{updateBy.id},
+			#{remarks}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE post_main SET 	
+			subject = #{subject},
+			content = #{content},
+			fk_group_id = #{group.id},
+			post_num = #{postNum},
+			order_num = #{orderNum},
+			update_date = #{updateDate},
+			update_by = #{updateBy.id},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE post_main SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+
+	<select id="getPostMainList" resultType="Map">
+		select a.*,SUM(CASE WHEN timediff(p.create_date,#{updateDate})>=TIME('00:00:00') THEN 1 ELSE 0 END) AS newPostNum
+		from (
+		SELECT
+		pm.id AS postId,
+		pm.subject AS postName,
+		cc.name AS groupName,
+		cc.id AS groupId,
+		pm.create_by AS creatorId,
+		u.name AS creatorName,
+		u.photo AS creatorPhoto,
+		pm.post_num AS postNum,
+		pm.remarks AS postImg,
+		pm.content AS postContent,
+		date_format(pm.create_date,"%Y-%m-%d %T") AS createDate,
+		pm.order_num AS orderNum,
+		date_format(pm.update_date,"%Y-%m-%d %T") AS updateDate,
+		<choose>
+			<when test="currentUser!=null and currentUser.id !=null">
+				SUM(CASE WHEN c.create_by = #{currentUser.id} AND c.del_flag = #{DEL_FLAG_NORMAL} THEN 1 ELSE 0 END ) AS hasCollection
+			</when>
+			<otherwise>
+				0 AS hasCollection
+			</otherwise>
+		</choose>
+		FROM post_main pm
+		LEFT JOIN cms_category cc ON cc.id = pm.fk_group_id
+		LEFT JOIN sys_user u ON u.id = pm.create_by
+		LEFT JOIN collection c ON c.model_id = pm.id
+		WHERE
+		pm.del_flag = #{DEL_FLAG_NORMAL}
+		<if test="group!=null and group.id !=null and group.id!=''">
+			AND (cc.parent_ids like CONCAT('%',#{group.id},'%') OR cc.id = #{group.id})
+		</if>
+		<if test="sqlMap!=null and sqlMap.addition!=null">
+			${sqlMap.addition}
+		</if>
+		<if test="subject!=null and subject != ''">
+			AND (pm.subject like CONCAT('%',#{subject},'%') OR pm.content like CONCAT('%',#{content},'%'))
+		</if>
+		GROUP BY pm.id
+		) a
+		LEFT JOIN post p on p.main_id = a.postId AND p.del_flag = #{DEL_FLAG_NORMAL}
+		GROUP BY a.postId
+		ORDER BY a.orderNum DESC,a.createDate DESC
+	</select>
+
+	<update id="deleteAll">
+		UPDATE post_main SET
+		del_flag = #{DEL_FLAG_DELETE}
+		WHERE ${sqlMap.del}
+	</update>
+
+	
+</mapper>

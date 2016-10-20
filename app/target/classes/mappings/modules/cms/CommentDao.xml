@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bra.modules.cms.dao.CommentDao">
+    
+	<sql id="cmsCommentDaoColumns">
+		a.id AS "id",
+		a.content_id AS "contentId",
+		a.content_model AS "contentModel",
+		a.title AS "title",
+		a.content AS "content",
+		u.name AS "name",
+		a.ip AS "ip",
+		a.audit_user_id AS "auditUser.id",
+		a.audit_date AS "auditDate",
+		a.create_by AS "createBy.id",
+		u.name AS "createBy.name",
+		u.photo AS "createBy.photo",
+		a.create_date AS "createDate",
+		a.del_flag AS "delFlag",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate"
+	</sql>
+	
+	<sql id="cmsCommentDaoJoins">
+		LEFT JOIN sys_user u ON u.id = a.audit_user_id
+	</sql>
+    
+	<select id="get" resultType="Comment">
+		SELECT 
+			<include refid="cmsCommentDaoColumns"/>
+		FROM cms_comment a
+		<include refid="cmsCommentDaoJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="Comment">
+		SELECT 
+			<include refid="cmsCommentDaoColumns"/>
+		FROM cms_comment a
+		<include refid="cmsCommentDaoJoins"/>
+		<where>
+			a.del_flag = #{delFlag}
+			<if test="title != null and title != ''">
+				AND a.title LIKE 
+					<if test="dbName == 'oracle'">'%'||#{title}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{title}+'%'</if>
+					<if test="dbName == 'mysql'">CONCAT('%', #{title}, '%')</if>
+			</if>
+			<if test="contentId != null and contentId != ''">
+				AND a.content_id = #{contentId}
+			</if>
+			<if test="contentModel != null and contentModel != ''">
+				AND a.content_model = #{contentModel}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.create_date DESC
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="findListMap" resultType="Map">
+		SELECT
+		a.id AS "id",
+		a.content_id AS "contentId",
+		CASE WHEN a.content_model is NULL THEN "" ELSE a.content_model  END AS "contentModel",
+		CASE WHEN a.content is NULL THEN "" ELSE a.content  END  AS "content",
+		u.id AS "creatorId",
+		CASE WHEN u.name is NULL THEN "" ELSE u.name  END AS "name",
+		CASE WHEN u.photo is NULL THEN "" ELSE u.photo  END AS "photo",
+		CASE WHEN a.create_date is NULL THEN "" ELSE date_format(a.create_date,'%Y-%m-%d %T')  END AS "createDate",
+		SUM(CASE WHEN att.`status` = '1' AND att.del_flag = #{DEL_FLAG_NORMAL} THEN 1 ELSE 0 END) AS "goodNum",
+		SUM(CASE WHEN att.`status` = '0' AND att.del_flag = #{DEL_FLAG_NORMAL} THEN 1 ELSE 0 END) AS "badNum",
+		CASE WHEN a.audit_user_id = #{currentUser.id} THEN "1" ELSE "0" END AS "hasComment",
+		SUM(CASE WHEN att.create_by = #{currentUser.id} AND att.del_flag = #{DEL_FLAG_NORMAL} THEN 1 ELSE 0 END) AS "hasAttitude"
+		FROM cms_comment a
+		LEFT JOIN attitude att ON a.id = att.model_id
+		<include refid="cmsCommentDaoJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="title != null and title != ''">
+				AND a.title LIKE
+				<if test="dbName == 'oracle'">'%'||#{title}||'%'</if>
+				<if test="dbName == 'mssql'">'%'+#{title}+'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{title}, '%')</if>
+			</if>
+			<if test="contentId != null and contentId != ''">
+				AND a.content_id = #{contentId}
+			</if>
+			<if test="contentModel != null and contentModel != ''">
+				AND a.content_model = #{contentModel}
+			</if>
+		</where>
+		GROUP BY a.id
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.create_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="Comment">
+		SELECT 
+			<include refid="cmsCommentDaoColumns"/>
+		FROM cms_comment a
+		<include refid="cmsCommentDaoJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.create_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO cms_comment(
+			id,
+			category_id,
+			content_id,
+			content_model,
+			title,
+			content,
+			name,
+			ip,
+			create_date,
+			audit_user_id,
+			audit_date,
+			del_flag
+		) VALUES (
+			#{id},
+			#{category.id},
+			#{contentId},
+			#{contentModel},
+			#{title},
+			#{content},
+			#{name},
+			#{ip},
+			#{createDate},
+			#{auditUser.id},
+			#{auditDate},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE cms_comment SET
+			category_id = #{category.id},
+			content_id = #{contentId},
+			content_model = #{contentModel},
+			title = #{title},
+			content = #{content},
+			name = #{name},
+			ip = #{ip},
+			create_date = #{createDate},
+			audit_user_id = #{auditUser.id},
+			audit_date = #{auditDate},
+			del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE cms_comment SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+
+	<update id="deleteAll">
+		UPDATE cms_comment SET
+		del_flag = #{DEL_FLAG_DELETE}
+		WHERE ${sqlMap.del}
+	</update>
+	
+</mapper>

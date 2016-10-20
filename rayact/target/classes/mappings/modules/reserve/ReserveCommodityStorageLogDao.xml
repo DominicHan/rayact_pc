@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bra.modules.reserve.dao.ReserveCommodityStorageLogDao">
+    
+	<sql id="reserveCommodityStorageLogColumns">
+		a.id AS "id",
+		a.fk_reserve_venue_id AS "reserveVenue.id",
+		venue.name AS "reserveVenue.name",
+		a.fk_reserve_commodity_id AS "reserveCommodity.id",
+		commodity.name AS "reserveCommodity.name",
+		a.box_num AS "boxNum",
+		a.num AS "num",
+		a.before_num AS "beforeNum",
+		a.after_num AS "afterNum",
+		a.box_price AS "boxPrice",
+		a.price AS "price",
+		a.fk_reserve_commodity_supplier_id AS "reserveCommoditySupplier.id",
+		s.name AS "reserveCommoditySupplier.name",
+		a.create_by AS "createBy.id",
+		u.name AS "createBy.name",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		a.tenant_id AS "tenantId"
+	</sql>
+	
+	<sql id="reserveCommodityStorageLogJoins">
+		LEFT JOIN reserve_commodity as commodity on a.fk_reserve_commodity_id=commodity.id
+		LEFT JOIN reserve_venue as venue on a.fk_reserve_venue_id=venue.id
+		LEFT JOIN reserve_user as u on u.id=a.create_by
+		LEFT JOIN reserve_commodity_supplier as s on s.id=a.fk_reserve_commodity_supplier_id
+	</sql>
+    
+	<select id="get" resultType="ReserveCommodityStorageLog">
+		SELECT 
+			<include refid="reserveCommodityStorageLogColumns"/>
+		FROM reserve_commodity_storage_log a
+		<include refid="reserveCommodityStorageLogJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="ReserveCommodityStorageLog">
+		SELECT 
+			<include refid="reserveCommodityStorageLogColumns"/>
+		FROM reserve_commodity_storage_log a
+		<include refid="reserveCommodityStorageLogJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}  and a.tenant_id = #{tenantId}
+			<if test="startDate!=null and endDate !=null">
+				and (Date(a.create_date) between Date(#{startDate}) and Date(#{endDate}))
+			</if>
+			<if test="reserveVenue != null">
+				<if test="reserveVenue.id !=null and reserveVenue.id != ''">
+					AND a.fk_reserve_venue_id = #{reserveVenue.id}
+				</if>
+			</if>
+			<if test="reserveCommodity != null">
+				<if test="reserveCommodity.name !=null and reserveCommodity.name != ''">
+					AND commodity.name LIKE #{reserveCommodity.name}
+				</if>
+			</if>
+			<if test="reserveCommoditySupplier != null">
+				<if test="reserveCommoditySupplier.id !=null and reserveCommoditySupplier.id != ''">
+					AND a.fk_reserve_commodity_supplier_id = #{reserveCommoditySupplier.id}
+				</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ReserveCommodityStorageLog">
+		SELECT 
+			<include refid="reserveCommodityStorageLogColumns"/>
+		FROM reserve_commodity_storage_log a
+		<include refid="reserveCommodityStorageLogJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO reserve_commodity_storage_log(
+			id,
+			fk_reserve_venue_id,
+			fk_reserve_commodity_id,
+			box_num,
+			num,
+			before_num,
+			after_num,
+			box_price,
+			price,
+			fk_reserve_commodity_supplier_id,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag,
+			tenant_id
+		) VALUES (
+			#{id},
+			#{reserveVenue.id},
+			#{reserveCommodity.id},
+			#{boxNum},
+			#{num},
+			#{beforeNum},
+			#{afterNum},
+			#{boxPrice},
+			#{price},
+			#{reserveCommoditySupplier.id},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag},
+			#{tenantId}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE reserve_commodity_storage_log SET 	
+			fk_reserve_venue_id = #{reserveVenue.id},
+			fk_reserve_commodity_id = #{reserveCommodity.id},
+			box_num = #{boxNum},
+			num = #{num},
+			before_num = #{beforeNum},
+			after_num = #{afterNum},
+			box_price = #{boxPrice},
+			price = #{price},
+			fk_reserve_commodity_supplier_id =#{reserveCommoditySupplier.id},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks},
+			tenant_id = #{tenantId}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE reserve_commodity_storage_log SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

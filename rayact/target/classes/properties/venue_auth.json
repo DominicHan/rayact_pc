@@ -1,0 +1,288 @@
+[
+  {
+    "code": "baseSet",
+    "name": "基础设置",
+    "authorityList": [
+      {
+        "code": "venue",
+        "name": "场馆管理",
+        "href":"/reserve/reserveVenue/list",
+        "authorityList": []
+      },
+      {
+        "code": "field",
+        "name": "场地管理",
+        "href":"/reserve/reserveField/list",
+        "authorityList": []
+      },
+      {
+        "code": "fieldRelation",
+        "name": "场地关系管理",
+        "href":"/reserve/reserveFieldRelation/list",
+        "authorityList": []
+      },
+      {
+        "code": "user",
+        "name": "用户管理",
+        "href":"/reserve/user/list",
+        "authorityList": []
+      },
+      {
+        "code": "roleAuth",
+        "name": "角色权限管理",
+        "href":"/reserve/reserveRoleAuth/list",
+        "authorityList": []
+      },
+      {
+        "code": "timeInterval",
+        "name": "时令管理",
+        "href":"/reserve/reserveTimeInterval/list",
+        "authorityList": []
+      },
+      {
+        "code": "menu",
+        "name": "菜单管理",
+        "href":"/reserve/reserveMenu/list",
+        "authorityList": []
+      }
+    ]
+  },
+  {
+    "code": "memberSet",
+    "name": "会员管理",
+    "authorityList": [
+      {
+        "code": "member",
+        "name": "会员统计列表",
+        "href":"/reserve/reserveMember/list",
+        "authorityList": []
+      },
+      {
+        "code": "storedcardMember",
+        "name": "储值卡会员",
+        "href":"/reserve/storedCardMember/list",
+        "authorityList": []
+      },
+      {
+        "code": "timeCardMember",
+        "name": "次卡会员",
+        "href":"/reserve/timeCardMember/list",
+        "authorityList": []
+      },
+      {
+        "code": "storedcardSet",
+        "name": "储值卡设置",
+        "href":"/reserve/storedCardMemberSet/list",
+        "authorityList": []
+      },
+      {
+        "code": "timecardSet",
+        "name": "次卡设置",
+        "href":"/reserve/reserveTimecardMemberSet/list",
+        "authorityList": []
+      }
+    ]
+  },
+  {
+    "code": "fieldSet",
+    "name": "场地预订",
+    "authorityList": [
+      {
+        "code": "reserveField",
+        "name": "场地预订",
+        "href":"/reserve/field/main",
+        "authorityList": []
+      },
+      {
+        "code": "reserveFieldStatus",
+        "name": "空场审核",
+        "href":"/reserve/field/status",
+        "authorityList": []
+      },
+      {
+        "code": "vistorsSet",
+        "name": "场次票售卖",
+        "href":"/reserve/reserveVenueOrder/list",
+        "authorityList": []
+      },
+      {
+        "code": "venueVisitorsSet",
+        "name": "场次票设置",
+        "href":"/reserve/reserveVenueVisitorsSet/list",
+        "authorityList": []
+      },
+      {
+        "code": "reserveVenueBill",
+        "name": "场馆损益",
+        "href":"/reserve/reserveVenueBill/list",
+        "authorityList": []
+      },
+      {
+        "code": "tutor",
+        "name": "教练管理",
+        "href":"/reserve/reserveTutor/list",
+        "authorityList": []
+      }
+    ]
+  },
+  {
+    "code": "commoditySet",
+    "name": "商品管理",
+    "authorityList": [
+      {
+        "code": "commodityType",
+        "name": "商品类别",
+        "href":"/reserve/commodityType/list",
+        "authorityList": []
+      },
+      {
+        "code": "commodity",
+        "name": "商品管理",
+        "href":"/reserve/commodity/list",
+        "authorityList": []
+      },
+      {
+        "code": "commoditySell",
+        "name": "商品售卖",
+        "href":"/reserve/commodity/onShelfList",
+        "authorityList": []
+      },
+      {
+        "code": "commoditySupplier",
+        "name": "供应商管理",
+        "href":"/reserve/reserveCommoditySupplier/list",
+        "authorityList": []
+      },
+      {
+        "code": "commodityRecycleBin",
+        "name": "商品回收站",
+        "href":"/reserve/commodity/recycleBin",
+        "authorityList": []
+      }
+    ]
+  },
+  {
+    "code": "reportManagement",
+    "name": "报表管理",
+    "authorityList": [
+      {
+        "code": "totalIncomeReport",
+        "name": "流水收益统计",
+        "href":"/reserve/reserveVenue/totalIncomeReport",
+        "authorityList": []
+      },
+      {
+        "code": "allReport",
+        "name": "场馆收益统计",
+        "href":"/reserve/reserveSellReport/list",
+        "authorityList": []
+      },
+      {
+        "code": "memberIncomeReport",
+        "name": "会员充值统计",
+        "href":"/reserve/reserveCardStatements/memberIncomeReport",
+        "authorityList": []
+      },
+      {
+        "code": "commodityIncomeRecord",
+        "name": "商品收入统计",
+        "href":"/reserve/reserveCommoditySell/commodityIncomeIntervalReport",
+        "authorityList": []
+      },
+      {
+        "code": "venueIncomeReport",
+        "name": "场地收入统计",
+        "href":"/reserve/reserveVenue/fieldReport",
+        "authorityList": []
+      },
+      {
+        "code": "projectIncomeReport",
+        "name": "项目收入统计",
+        "href":"/reserve/saleVenueReport/list",
+        "authorityList": []
+      }, {
+        "code": "tutorOrder",
+        "name": "教练收入统计",
+        "href":"/reserve/reserveTutorOrder/orderAll",
+        "authorityList": []
+      },
+      {
+        "code": "listOpenRate",
+        "name": "场地利用率",
+        "href":"/reserve/saleVenueReport/listOpenRate",
+        "authorityList": []
+      },
+      {
+        "code": "dataListener",
+        "name": "数据监控",
+        "href":"/reserve/reserveListener/report",
+        "authorityList": []
+      },
+      {
+        "code": "invoiceList",
+        "name": "发票管理",
+        "href":"/reserve/reserveInvoice/list",
+        "authorityList": []
+      }
+    ]
+  },
+  {
+    "code": "operationLog",
+    "name": "操作日志",
+    "authorityList": [
+      {
+        "code": "reserveCardRechargeStatements",
+        "name": "储值卡充值记录",
+        "href":"/reserve/reserveCardStatements/list?transactionType=1",
+        "authorityList": []
+      },
+      {
+        "code": "timeCardRechargeStatements",
+        "name": "次卡充值记录",
+        "href":"/reserve/reserveCardStatements/list?transactionType=7",
+        "authorityList": []
+      },
+      {
+        "code": "saleVenueLog",
+        "name": "场地售卖记录",
+        "href":"/reserve/saleVenue/list",
+        "authorityList": []
+      },
+      {
+        "code": "reserveCommoditySellDetail",
+        "name": "商品销售记录",
+        "href":"/reserve/reserveCommoditySellDetail/findSellDetailList",
+        "authorityList": []
+      },
+      {
+        "code": "reserveCommoditySell",
+        "name": "商品订单列表",
+        "href":"/reserve/reserveCommoditySell/list",
+        "authorityList": []
+      },
+      {
+        "code": "reserveCommodityStorageLog",
+        "name": "商品入库记录",
+        "href":"/reserve/reserveCommodityStorageLog/list",
+        "authorityList": []
+      },
+      {
+        "code": "reserveCardCancellationStatements",
+        "name": "储值卡销户记录",
+        "href":"/reserve/reserveCardStatements/list?transactionType=5",
+        "authorityList": []
+      },
+      {
+        "code": "reserveCardRefundStatements",
+        "name": "会员退费记录",
+        "href":"/reserve/reserveCardStatements/list?transactionType=2",
+        "authorityList": []
+      },{
+        "code": "timeCardCancellationStatements",
+        "name": "次卡销户记录",
+        "href":"/reserve/reserveCardStatements/list?transactionType=11",
+        "authorityList": []
+      }
+    ]
+  }
+]

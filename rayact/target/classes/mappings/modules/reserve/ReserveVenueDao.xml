@@ -1,0 +1,611 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bra.modules.reserve.dao.ReserveVenueDao">
+
+    <sql id="reserveVenueColumns">
+		a.id AS "id",
+		a.name AS "name",
+		a.available AS "available",
+		a.address AS "address",
+		a.charge_user_id AS "chargeUser.id",
+		a.start_time AS "startTime",
+		a.end_time AS "endTime",
+		a.address_x AS "addressX",
+		a.address_y AS "addressY",
+		a.district_name AS "districtName",
+        a.city_name AS "cityName",
+        a.ave_price AS "avePrice",
+        a.evaluate_score AS "evaluateScore",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.tel AS "tel",
+		a.more_service AS "moreService",
+		a.del_flag AS "delFlag"
+	</sql>
+
+    <sql id="reserveVenueJoins">
+    </sql>
+
+    <select id="get" resultType="ReserveVenue">
+        SELECT
+        <include refid="reserveVenueColumns"/>
+        FROM reserve_venue a
+        <include refid="reserveVenueJoins"/>
+        WHERE a.id = #{id}
+    </select>
+    <!--app获得场馆详情-->
+    <select id="getForApp" parameterType="ReserveVenue" resultType="Map">
+        SELECT
+        a.id AS "venueId",
+        a.name AS "venueName",
+        a.address AS "address",
+        a.remarks AS "remarks",
+        a.tel AS "tel",
+        a.address_x AS "longitude",
+        a.address_y AS "latitude"
+        FROM reserve_venue a
+        <include refid="reserveVenueJoins"/>
+        WHERE a.id = #{id}
+    </select>
+
+    <select id="findList" resultType="ReserveVenue">
+        SELECT
+        <include refid="reserveVenueColumns"/>
+        FROM reserve_venue a
+        <include refid="reserveVenueJoins"/>
+        <where>
+            a.del_flag = #{DEL_FLAG_NORMAL}
+            <if test="tenantId != null and tenantId != ''">
+                and a.tenant_id = #{tenantId}
+            </if>
+            <if test="available != null and available != ''">
+                and a.available = #{available}
+            </if>
+            <if test="name != null and name != ''">
+                AND a.name LIKE
+                <if test="dbName == 'oracle'">'%'||#{name}||'%'</if>
+                <if test="dbName == 'mssql'">'%'+#{name}+'%'</if>
+                <if test="dbName == 'mysql'">concat('%',#{name},'%')</if>
+            </if>
+            ${sqlMap.dsf}
+        </where>
+        <choose>
+            <when test="page !=null and page.orderBy != null and page.orderBy != ''">
+                ORDER BY ${page.orderBy}
+            </when>
+            <otherwise>
+                ORDER BY a.update_date ASC
+            </otherwise>
+        </choose>
+    </select>
+    <!--app获得某场馆的项目列表-->
+    <select id="findProjectListOfVenueForApp" parameterType="ReserveVenue" resultType="Map">
+        SELECT
+        DISTINCT
+        c.id AS "projectId",
+        c.name AS "projectName",
+        a.id AS "venueId"
+        FROM reserve_venue a
+        LEFT JOIN reserve_field b on b.venue_id=a.id
+        LEFT JOIN reserve_project c on c.id=b.project_id
+        <where>
+            a.del_flag = #{DEL_FLAG_NORMAL}
+            <if test="id != null and id != ''">
+                AND a.id = #{id}
+            </if>
+            <if test="projectId != null and projectId != ''">
+                AND c.id = #{projectId}
+            </if>
+        </where>
+        <choose>
+            <otherwise>
+                ORDER BY a.update_date ASC
+            </otherwise>
+        </choose>
+    </select>
+    <!--app获得场馆列表-->
+    <select id="findListForApp" parameterType="ReserveVenue" resultType="Map">
+        SELECT
+        a.id AS "venueId",
+        a.name AS "venueName",
+        a.address AS "address",
+        a.address_x AS "addressX",
+        a.address_y AS "addressY",
+        a.more_service AS "moreService",
+        a.evaluate_score AS "evaluateScore",
+        a.ave_price AS "avePrice"
+        FROM reserve_venue a
+        <where>
+            a.del_flag = #{DEL_FLAG_NORMAL} and available='1'
+            <if test="name != null and name != ''">
+                AND a.name LIKE concat('%',#{name},'%')
+            </if>
+            <if test="cityName != null and cityName != ''">
+                AND a.city_name LIKE concat('%',#{cityName},'%')
+            </if>
+            <if test="districtName != null and districtName != ''">
+                AND a.district_name LIKE concat('%',#{districtName},'%')
+            </if>
+        </where>
+        <choose>
+            <otherwise>
+                ORDER BY a.update_date ASC
+            </otherwise>
+        </choose>
+    </select>
+    <!--app获得某场馆图片列表-->
+    <select id="findImgPathList" parameterType="ReserveVenue" resultType="Map">
+        SELECT
+        m.id AS "imgId"
+        FROM reserve_venue a
+        LEFT JOIN mechanism_att_main m ON (m.fd_model_id=a.id and m.del_flag='0')
+        <where>
+            a.del_flag = #{DEL_FLAG_NORMAL}
+            <if test="id != null and id != ''">
+                AND a.id = #{id}
+            </if>
+        </where>
+    </select>
+
+    <!--pc获得场馆有哪些项目-->
+    <select id="findVenueProjectList" resultType="ReserveVenueProjectIntervalReport">
+        select DISTINCT
+        #{startDate} AS "startDate",
+        #{endDate} AS "endDate",
+        v.id AS "reserveVenue.id",
+        v.name AS "reserveVenue.name",
+        p.id AS "reserveProject.id",
+        p.name AS "reserveProject.name"
+        from reserve_field a
+        LEFT JOIN reserve_project p on a.project_id=p.id
+        LEFT JOIN reserve_venue v on a.venue_id=v.id
+        <where>
+            a.del_flag = #{DEL_FLAG_NORMAL} and a.tenant_id = #{tenantId}
+            <if test="reserveVenue !=null ">
+                <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                    and a.venue_id=#{reserveVenue.id}
+                </if>
+            </if>
+            <if test="reserveProject !=null ">
+                <if test="reserveProject.id !=null and reserveProject.id !=''">
+                    and p.id=#{reserveProject.id}
+                </if>
+            </if>
+            ${sqlMap.dsf}
+        </where>
+    </select>
+
+
+    <!--pc场馆项目场地日报表-->
+    <select id="dayReport" resultType="com.bra.modules.reserve.entity.form.ReserveVenueProjectFieldDayReport">
+        SELECT
+        <if test="reserveVenue !=null ">
+            <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                e.id AS "reserveVenue.id",
+                e.name AS "reserveVenue.name",
+            </if>
+        </if>
+        <if test="reserveProject !=null ">
+            <if test="reserveProject.id !=null and reserveProject.id !=''">
+                d.id AS "reserveProject.id",
+                d.name AS "reserveProject.name",
+            </if>
+        </if>
+        <if test="reserveField !=null ">
+            <if test="reserveField.id !=null and reserveField.id !=''">
+                c.id AS "reserveField.id",
+                c.name AS "reserveField.name",
+            </if>
+        </if>
+        b.cons_date AS "day",
+        sum(b.order_price) AS "bill",
+        sum(if(pay_type=1,b.order_price,0)) AS "fieldBillStoredCard",
+        sum(if(pay_type=2,b.order_price,0)) AS "fieldBillCash",
+        sum(if(pay_type=3,b.order_price,0)) AS "fieldBillBankCard",
+        sum(if(pay_type=4,b.order_price,0)) AS "fieldBillWeiXin",
+        sum(if(pay_type=5,b.order_price,0)) AS "fieldBillAliPay",
+        sum(if(pay_type=6,b.order_price,0)) AS "fieldBillOther",
+        sum(if(pay_type=7,b.order_price,0)) AS "fieldBillDue"
+        from reserve_venue_cons_item as a,reserve_venue_cons as b,reserve_field as c,reserve_project as d,reserve_venue
+        as e
+        <where>
+            a.cons_data_id=b.id and a.field_id=c.id and c.project_id=d.id and a.del_flag = #{DEL_FLAG_NORMAL} and
+            a.tenant_id = #{tenantId} and b.reserve_type='4'
+            and a.venue_id=e.id
+            <if test="reserveVenue !=null ">
+                <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                    and a.venue_id=#{reserveVenue.id}
+                </if>
+            </if>
+            <if test="reserveProject !=null ">
+                <if test="reserveProject.id !=null and reserveProject.id !=''">
+                    and d.id=#{reserveProject.id}
+                </if>
+            </if>
+            <if test="reserveField !=null ">
+                <if test="reserveField.id !=null and reserveField.id !=''">
+                    and c.id = #{reserveField.id}
+                </if>
+            </if>
+            <if test="day !=null">
+                and Date(b.cons_date)=Date(#{day})
+            </if>
+        </where>
+        group by c.id,b.cons_date
+        <if test="reserveProject !=null ">
+            <if test="reserveProject.id !=null and reserveProject.id !=''">
+                ,d.id
+            </if>
+        </if>
+        <if test="reserveVenue !=null ">
+            <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                ,e.id
+            </if>
+        </if>
+        ORDER BY day ASC
+    </select>
+    <!--pc统计 流水收益-->
+    <select id="totalIncomeReport" resultType="com.bra.modules.reserve.entity.form.ReserveVenueTotalIntervalReport">
+        SELECT
+		v.id as "reserveVenue.id",
+		v.name as "reserveVenue.name",
+		case s.transaction_type
+        <if test="queryType !=null and '0'.toString()==queryType">
+            when 1 then "储值卡充值"
+            when 7 then "次卡充值"
+        </if>
+			when 3 then "商品"
+			when 8 then "场地售卖"
+			when 9 then "场次票售卖"
+            when 10 then "教练收入"
+            when 11 then "教练收入"
+		END
+		as "transactionType",
+        <if test="queryType !=null and '1'.toString()==queryType">
+                sum(if(s.pay_type=1,s.transaction_volume,0)) AS "storedCardBill",
+                sum(if(s.pay_type=6,s.transaction_volume,0)) AS "otherBill",
+                sum(if(s.pay_type=7,s.transaction_volume,0)) AS "dueBill",
+        </if>
+        sum(if(s.pay_type=2,s.transaction_volume,0)) AS "cashBill",
+        sum(if(s.pay_type=3,s.transaction_volume,0)) AS "bankCardBill",
+        sum(if(s.pay_type=4,s.transaction_volume,0)) AS "weiXinBill",
+        sum(if(s.pay_type=9,s.transaction_volume,0)) AS "personalWeiXinBill",
+        sum(if(s.pay_type=5,s.transaction_volume,0)) AS "aliPayBill",
+        sum(if(s.pay_type=10,s.transaction_volume,0)) AS "personalAliPayBill",
+        sum(if(s.pay_type=11,s.transaction_volume,0)) AS "transferBill"
+		FROM reserve_venue v
+		inner JOIN reserve_card_statements s on (s.venue_id = v.id and
+            (
+                s.transaction_type='3'
+               /* 交易类型 (1：储值卡充值，2：退费，3：商品消费,33:商品消费合计，该方式仅仅用于个人消费明细 4:超级管理员修改余额 5：销户退还用户的金额 6：销户违约金;7:次卡充值,8:场地售卖，9：场次票售卖，10：教练收入)*/
+                <if test="queryType !=null and '0'.toString()==queryType">
+                    or s.transaction_type='1' or s.transaction_type='7'
+                </if>
+                or s.transaction_type='8' or s.transaction_type='9' or s.transaction_type='10'
+            )
+        )
+        <where>
+            s.pay_type!='' and s.transaction_type!='' and s.del_flag = #{DEL_FLAG_NORMAL} and s.tenant_id = #{tenantId}
+            <if test="reserveVenue !=null ">
+                <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                    and s.venue_id=#{reserveVenue.id}
+                </if>
+            </if>
+            <if test="startDate !=null and endDate !=null">
+                and (Date(s.create_date) BETWEEN DATE (#{startDate}) AND DATE(#{endDate}))
+            </if>
+            ${sqlMap.dsf}
+        </where>
+		group by s.transaction_type, v.id
+        order by v.id
+    </select>
+    <!--场地包场收入-->
+    <select id="reserveVenueProjectBlockIntervalReport"
+            resultType="com.bra.modules.reserve.entity.form.ReserveVenueProjectIntervalReport">
+        SELECT
+        DISTINCT
+        v.id AS "reserveVenue.id",
+        v.name AS "reserveVenue.name",
+        d.id AS "reserveProject.id",
+        d.name AS "reserveProject.name",
+        sum(
+        case
+        WHEN b.pay_type!=8 then b.cons_price
+        WHEN p.pay_type!=8 then p.payment_amount
+        end
+        ) AS "bill",
+        sum(
+        case
+        WHEN b.pay_type=1 then b.cons_price
+        WHEN p.pay_type=1 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "storedCardBill",
+        sum(
+        case
+        WHEN b.pay_type=2 then b.cons_price
+        WHEN p.pay_type=2 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "cashBill",
+        sum(
+        case
+        WHEN b.pay_type=3 then b.cons_price
+        WHEN p.pay_type=3 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "bankCardBill",
+        sum(
+        case
+        WHEN b.pay_type=11 then b.cons_price
+        WHEN p.pay_type=11 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "transferBill",
+        sum(
+        case
+        WHEN b.pay_type=4 then b.cons_price
+        WHEN p.pay_type=4 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "weiXinBill",
+        sum(
+        case
+        WHEN b.pay_type=9 then b.cons_price
+        WHEN p.pay_type=9 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "personalWeiXinBill",
+        sum(
+        case
+        WHEN b.pay_type=5 then b.cons_price
+        WHEN p.pay_type=5 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "aliPayBill",
+        sum(
+        case
+        WHEN b.pay_type=10 then b.cons_price
+        WHEN p.pay_type=10 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "personalAliPayBill",
+        sum(
+        case
+        WHEN b.pay_type=6 then b.cons_price
+        WHEN p.pay_type=6 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "otherBill",
+        sum(
+        case
+        WHEN b.pay_type=7 then b.cons_price
+        WHEN p.pay_type=7 then p.payment_amount
+        ELSE 0
+        end
+        ) AS "dueBill"
+        from
+        reserve_venue_cons_item as a
+        LEFT JOIN reserve_venue_cons as b on a.cons_data_id=b.id
+        LEFT JOIN reserve_field as c on a.field_id=c.id
+        LEFT JOIN reserve_venue as v on a.venue_id=v.id
+        LEFT JOIN reserve_project as d on c.project_id=d.id
+        LEFT JOIN reserve_multiple_payment as p on p.order_id=b.id
+        <where>
+            a.del_flag = #{DEL_FLAG_NORMAL}
+            and a.tenant_id = #{tenantId} and b.reserve_type='4'
+            <if test="reserveVenue !=null ">
+                <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                    and a.venue_id=#{reserveVenue.id}
+                </if>
+            </if>
+            <if test="reserveProject !=null ">
+                <if test="reserveProject.id !=null and reserveProject.id !=''">
+                    AND d.id=#{reserveProject.id}
+                </if>
+            </if>
+            <if test="startDate !=null and endDate !=null">
+                and (Date(b.cons_date) BETWEEN DATE (#{startDate}) AND DATE(#{endDate}))
+            </if>
+            ${sqlMap.dsf}
+        </where>
+        GROUP BY d.id,v.id
+    </select>
+    <!--场次散客收入-->
+    <select id="reserveVenueProjectDividedIntervalReport"
+            resultType="com.bra.modules.reserve.entity.form.ReserveVenueProjectIntervalReport">
+        select
+        a.venue_id AS "reserveVenue.id",
+        v.name AS "reserveVenue.name",
+        p.id AS "reserveProject.id",
+        p.name AS "reserveProject.name",
+        SUM(a.collect_price) AS "bill",
+        sum(if(pay_type=1,a.collect_price,0)) AS "storedCardBill",
+        sum(if(pay_type=2,a.collect_price,0)) AS "cashBill",
+        sum(if(pay_type=3,a.collect_price,0)) AS "bankCardBill",
+        sum(if(pay_type=11,a.collect_price,0)) AS "transferBill",
+        sum(if(pay_type=4,a.collect_price,0)) AS "weiXinBill",
+        sum(if(pay_type=9,a.collect_price,0)) AS "personalWeiXinBill",
+        sum(if(pay_type=5,a.collect_price,0)) AS "aliPayBill",
+        sum(if(pay_type=10,a.collect_price,0)) AS "personalAliPayBill",
+        sum(if(pay_type=6,a.collect_price,0)) AS "otherBill",
+        sum(if(pay_type=7,a.collect_price,0)) AS "dueBill"
+        from reserve_venue_order a,reserve_project p,reserve_venue v,reserve_venue_visitors_set as s
+        <where>
+            a.venue_id = v.id and a.visitors_set_id=s.id and s.project_id=p.id
+            and a.del_flag = #{DEL_FLAG_NORMAL} and a.tenant_id = #{tenantId}
+            <if test="reserveVenue !=null ">
+                <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                    and a.venue_id=#{reserveVenue.id}
+                </if>
+            </if>
+            <if test="reserveProject !=null ">
+                <if test="reserveProject.id !=null and reserveProject.id !=''">
+                    AND p.id=#{reserveProject.id}
+                </if>
+            </if>
+            <if test="startDate !=null and endDate !=null">
+                and (Date(a.order_date) BETWEEN DATE (#{startDate}) AND DATE(#{endDate}))
+            </if>
+            ${sqlMap.dsf}
+        </where>
+        GROUP BY p.id,v.id
+    </select>
+    <!--场馆 项目 场地 区间收入-->
+
+    <select id="reserveVenueProjectFieldIntervalReport"
+            resultType="com.bra.modules.reserve.entity.form.ReserveVenueProjectFieldIntervalReport">
+        SELECT
+        e.id AS "reserveVenue.id",
+        e.name AS "reserveVenue.name",
+        d.id AS "reserveProject.id",
+        d.name AS "reserveProject.name",
+        c.id AS "reserveField.id",
+        c.name AS "reserveField.name",
+        #{startDate} AS "startDate",
+        #{endDate} AS "endDate",
+        sum(b.cons_price) AS "bill",
+        sum(if(pay_type=1,b.cons_price,0)) AS "storedCardBill",
+        sum(if(pay_type=2,b.cons_price,0)) AS "cashBill",
+        sum(if(pay_type=3,b.cons_price,0)) AS "bankCardBill",
+        sum(if(pay_type=11,b.cons_price,0)) AS "transferBill",
+        sum(if(pay_type=4,b.cons_price,0)) AS "weiXinBill",
+        sum(if(pay_type=9,b.cons_price,0)) AS "personalWeiXinBill",
+        sum(if(pay_type=5,b.cons_price,0)) AS "aliPayBill",
+        sum(if(pay_type=10,b.cons_price,0)) AS "personalAliPayBill",
+        sum(if(pay_type=6,b.cons_price,0)) AS "otherBill",
+        sum(if(pay_type=7,b.cons_price,0)) AS "dueBill",
+        sum(if(pay_type=8,b.cons_price,0)) AS "multiplePaymentBill"
+        from reserve_venue_cons_item as a,reserve_venue_cons as b,reserve_field as c,reserve_project as d,reserve_venue as e
+        <where>
+            a.cons_data_id=b.id and a.field_id=c.id and c.project_id=d.id and a.del_flag = #{DEL_FLAG_NORMAL} and
+            a.tenant_id = #{tenantId} and b.reserve_type='4'
+            and a.venue_id=e.id
+            <if test="reserveVenue !=null ">
+                <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                    and e.id=#{reserveVenue.id}
+                </if>
+            </if>
+            <if test="reserveProject !=null ">
+                <if test="reserveProject.id !=null and reserveProject.id !=''">
+                    AND d.id=#{reserveProject.id}
+                </if>
+            </if>
+            <if test="startDate !=null and endDate !=null">
+                and (Date(b.cons_date) BETWEEN DATE (#{startDate}) AND DATE(#{endDate}))
+            </if>
+        </where>
+            GROUP BY c.id
+        <if test="reserveProject !=null ">
+            <if test="reserveProject.id !=null and reserveProject.id !=''">
+                ,d.id
+            </if>
+        </if>
+        <if test="reserveVenue !=null ">
+            <if test="reserveVenue.id !=null and reserveVenue.id !=''">
+                ,e.id
+            </if>
+        </if>
+    </select>
+
+    <select id="findAllList" resultType="ReserveVenue">
+        SELECT
+        <include refid="reserveVenueColumns"/>
+        FROM reserve_venue a
+        <include refid="reserveVenueJoins"/>
+        <where>
+            a.del_flag = #{DEL_FLAG_NORMAL} and a.tenant_id = #{tenantId}
+        </where>
+        <choose>
+            <when test="page !=null and page.orderBy != null and page.orderBy != ''">
+                ORDER BY ${page.orderBy}
+            </when>
+            <otherwise>
+                ORDER BY a.update_date DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <insert id="insert">
+		INSERT INTO reserve_venue(
+		id,
+		name,
+		available,
+		address,
+		charge_user_id,
+		address_x,
+		address_y,
+		district_name,
+        city_name,
+        ave_price,
+        evaluate_score,
+		start_time,
+		end_time,
+		create_by,
+		create_date,
+		update_by,
+		update_date,
+		remarks,
+		tel,
+		more_service,
+		tenant_id,
+		del_flag
+		) VALUES (
+		#{id},
+		#{name},
+		#{available},
+		#{address},
+		#{chargeUser.id},
+		#{addressX},
+		#{addressY},
+		#{districtName},
+		#{cityName},
+		#{avePrice},
+		#{evaluateScore},
+		#{startTime},
+		#{endTime},
+		#{createBy.id},
+		#{createDate},
+		#{updateBy.id},
+		#{updateDate},
+		#{remarks},
+		#{tel},
+		#{moreService},
+		#{tenantId},
+		#{delFlag}
+		)
+	</insert>
+
+    <update id="update">
+		UPDATE reserve_venue SET
+		name = #{name},
+		available = #{available},
+		address = #{address},
+		address_x = #{addressX},
+		address_y = #{addressY},
+		district_name = #{districtName},
+        city_name = #{cityName},
+        evaluate_score = #{evaluateScore},
+		ave_price= #{avePrice},
+		charge_user_id = #{chargeUser.id},
+		start_time = #{startTime},
+		end_time = #{endTime},
+		update_by = #{updateBy.id},
+		update_date = #{updateDate},
+		tel = #{tel},
+		more_service = #{moreService},
+		tenant_id = #{tenantId},
+		remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+
+    <update id="delete">
+		UPDATE reserve_venue SET
+		del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+
+</mapper>
