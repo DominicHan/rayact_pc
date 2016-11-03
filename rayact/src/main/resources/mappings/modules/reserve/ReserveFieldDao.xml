@@ -32,6 +32,7 @@
 		FROM reserve_field a
 		<include refid="reserveFieldJoins"/>
 		WHERE a.id = #{id}
+		and a.available != '0'
 	</select>
 	
 	<select id="findList" resultType="ReserveField">
@@ -60,6 +61,7 @@
 					AND project_id = #{reserveProject.id}
 				</if>
 			</if>
+			and a.available != '0'
 			${sqlMap.dsf}
 		</where>
 		<choose>
@@ -79,6 +81,7 @@
 		<include refid="reserveFieldJoins"/>
 		<where>
 			a.del_flag = #{DEL_FLAG_NORMAL} and a.tenant_id = #{tenantId}
+			and a.available != '0'
 		</where>		
 		<choose>
 			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
